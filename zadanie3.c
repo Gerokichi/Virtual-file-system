@@ -65,12 +65,16 @@ int main() {
     bool present = true;
     while (present) {
         printf("# ");
-        fgets(input, 516, stdin);
-        input[strcspn(input, "\n")] = '\0';
+        if (fgets(input, 516, stdin) != NULL) {
+            input[strcspn(input, "\n")] = '\0';
 
-        if (strlen(input) == 0) continue;
+            if (strlen(input) == 0) continue;
 
-        present = CommandScanner(input, commands, func, comm_num);
+            present = CommandScanner(input, commands, func, comm_num);
+        }
+        else {
+            present = false;
+        }
     }
 
     free(base);
