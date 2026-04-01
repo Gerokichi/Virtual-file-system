@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 typedef struct Item {
     char name[256];
@@ -50,6 +51,8 @@ void ChangeOwn(char *arguments, Item **root);
 void SystemResponse(bool error);
 void Splitter(char *input, char **first, char **rest);
 void Stripping(Item *base);
+char* Fade(char *head);
+Item* LastBro(Item *root);
 
 
 int main() {
@@ -64,7 +67,7 @@ int main() {
 
     bool present = true;
     while (present) {
-        printf("# ");
+        printf("%s# ", root->name);                   // printf("# "); ?
         if (fgets(input, 516, stdin) != NULL) {
             input[strcspn(input, "\n")] = '\0';
 
@@ -85,15 +88,15 @@ int main() {
 bool CommandScanner(char input[], char **commands, void (**func)(char *, Item **), const int comm_num, Item **root) {
     char *command = NULL;
     char *rest = NULL;
-
     Splitter(input, &command, &rest);
+
+    if (command == NULL) return true;
 
     if (strcmp(command, "quit") == 0) return false;
 
     for (int i = 0; i < comm_num; i++) {
         if (command != NULL && strcmp(command, commands[i]) == 0) {
-            func[i](rest, root);
-
+            func[i](Fade(rest), root);
             return true;
         }
     }
@@ -104,7 +107,17 @@ bool CommandScanner(char input[], char **commands, void (**func)(char *, Item **
 
 
 void ContentShow(char *arguments, Item **root) {
-    if (arguments == NULL) return;
+    if (arguments == NULL) {
+        Item *temp = (*root)->children;
+        if (temp != NULL) {
+            printf("%s\n", temp->name);
+            while (temp->bro != NULL) {
+                printf("%s\n", temp->bro->name);
+                temp = temp->bro;
+            }
+        }
+        return;
+    }
 
     printf("%s\n", arguments);
 }
@@ -133,11 +146,22 @@ void CreateFile(char *arguments, Item **root) {
         return;
     }
 
-    // TODO: выделить память четко под имя и в добавить в чилдрен актуальной папки
-    // char *name = ...;
-    // strcpy();
+    char *name = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &name, &rest);
 
-    printf("%s\n", arguments);
+    if (rest != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *new = Construct(name, false, *root);
+    if ((*root)->children == NULL) {
+        (*root)->children = new;
+    }
+    else {
+        LastBro((*root)->children)->bro = new;
+    }
 }
 
 void CreateDirectory(char *arguments, Item **root) {
@@ -146,9 +170,22 @@ void CreateDirectory(char *arguments, Item **root) {
         return;
     }
 
-    // TODO: тоже что и файл но дир тру
+    char *name = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &name, &rest);
 
-    printf("%s\n", arguments);
+    if (rest != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *new = Construct(name, true, *root);
+    if ((*root)->children == NULL) {
+        (*root)->children = new;
+    }
+    else {
+        LastBro((*root)->children)->bro = new;
+    }
 }
 
 void ShowFileContent(char *arguments, Item **root) {
@@ -218,4 +255,28 @@ void Stripping(Item *base) {
     Stripping(base->bro);
 
     free(base);
+}
+
+char* Fade(char *head) {
+    if (head == NULL) return NULL;
+
+    while (isspace((unsigned char)*head)) head++;
+    if (*head == '\0') return NULL;
+
+    char *end = head + strlen(head) - 1;
+    while (end > head && isspace((unsigned char)*end)) end--;
+    end[1] = '\0';
+
+    return head;
+}
+
+Item* LastBro(Item *root) {
+    if (root == NULL) return NULL;
+
+    Item *last = root;
+    while (last->bro != NULL) {
+        last = last->bro;
+    }
+
+    return last;
 }
