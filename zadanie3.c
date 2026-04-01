@@ -53,6 +53,8 @@ void Splitter(char *input, char **first, char **rest);
 void Stripping(Item *base);
 char* Fade(char *head);
 Item* LastBro(Item *root);
+Item* BloodHound(Item *child, char *name);
+void ThreeYearsInDagestan(int npaBa, char *sosud);
 
 
 int main() {
@@ -107,19 +109,33 @@ bool CommandScanner(char input[], char **commands, void (**func)(char *, Item **
 
 
 void ContentShow(char *arguments, Item **root) {
+    char sosud_npaB[4];
+
     if (arguments == NULL) {
         Item *temp = (*root)->children;
-        if (temp != NULL) {
-            printf("%s\n", temp->name);
-            while (temp->bro != NULL) {
-                printf("%s\n", temp->bro->name);
-                temp = temp->bro;
-            }
+        while (temp != NULL) {
+            ThreeYearsInDagestan(temp->npaBa, sosud_npaB);
+            printf("%s %s %s\n", temp->name, temp->owner, sosud_npaB);
+            temp = temp->bro;
         }
         return;
     }
 
-    printf("%s\n", arguments);
+    char *name = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &name, &rest);
+
+    if (rest != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *target = BloodHound((*root)->children, name);
+    if (target != NULL) {
+        ThreeYearsInDagestan(target->npaBa, sosud_npaB);
+        printf("%s %s %s\n", target->name, target->owner, sosud_npaB);
+    }
+    else SystemResponse(true);
 }
 
 void TransitionTo(char *arguments, Item **root) {
@@ -128,7 +144,27 @@ void TransitionTo(char *arguments, Item **root) {
         return;
     }
 
-    printf("%s\n", arguments);
+    char *name = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &name, &rest);
+
+    if (rest != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    if (strcmp(name, "..") == 0) {
+        if ((*root)->parent != NULL) {
+            *root = (*root)->parent;
+        }
+        return;
+    }
+
+    Item *target = BloodHound((*root)->children, name);
+    if (target != NULL && target->dir) {
+        *root = target;
+    }
+    else SystemResponse(true);
 }
 
 void Remove(char *arguments, Item **root) {
@@ -279,4 +315,24 @@ Item* LastBro(Item *root) {
     }
 
     return last;
+}
+
+Item* BloodHound(Item *child, char *name) {
+    if (child == NULL) return NULL;
+
+    Item *target = child;
+    while (strcmp(target->name, name) != 0) {
+        if (target->bro == NULL) return NULL;
+
+        target = target->bro;
+    }
+
+    return target;
+}
+
+void ThreeYearsInDagestan(const int npaBa, char *sosud) {
+    sosud[0] = npaBa & 4 ? 'r' : '-';
+    sosud[1] = npaBa & 2 ? 'w' : '-';
+    sosud[2] = npaBa & 1 ? 'x' : '-';
+    sosud[3] = '\0';
 }
