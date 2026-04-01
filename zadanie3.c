@@ -15,11 +15,12 @@ typedef struct Item {
     struct Item *bro;
 } Item;
 
-Item* Construct(char* name, bool dir, Item* parent) {
-    Item* sosud = malloc(sizeof(Item));
+Item* Construct(char* name, bool dir, Item *parent) {
+    Item *sosud = malloc(sizeof(Item));
     if (!sosud) return NULL;
 
     strncpy(sosud->name, name, 255);
+    sosud->name[255] = '\0';
     sosud->dir = dir;
 
     strncpy(sosud->owner, "user", 255);
@@ -33,34 +34,33 @@ Item* Construct(char* name, bool dir, Item* parent) {
 }
 
 
-bool CommandScanner(char input[], char **commands, void (**func)(char *), int comm_num);
+bool CommandScanner(char input[], char **commands, void (**func)(char *, Item **), int comm_num, Item **root);
 
-void ContentShow(char *arguments);
-void TransitionTo(char *arguments);
-void Remove(char *arguments);
-void CreateFile(char *arguments);
-void CreateDirectory(char *arguments);
-void ShowFileContent(char *arguments);
-void RunFile(char *arguments);
-void WriteFile(char *arguments);
-void ChangeMode(char *arguments);
-void ChangeOwn(char *arguments);
+void ContentShow(char *arguments, Item **root);
+void TransitionTo(char *arguments, Item **root);
+void Remove(char *arguments, Item **root);
+void CreateFile(char *arguments, Item **root);
+void CreateDirectory(char *arguments, Item **root);
+void ShowFileContent(char *arguments, Item **root);
+void RunFile(char *arguments, Item **root);
+void WriteFile(char *arguments, Item **root);
+void ChangeMode(char *arguments, Item **root);
+void ChangeOwn(char *arguments, Item **root);
 
 void SystemResponse(bool error);
 void Splitter(char *input, char **first, char **rest);
+void Stripping(Item *base);
 
 
 int main() {
     char input[516];
 
     char *commands[] = {"ls", "cd", "rm", "touch", "mkdir", "vypis", "spusti", "zapis", "chmod", "chown"};
-    // TODO: подумать над передачей актуальной папки
-    void (*func[])(char *) = {ContentShow, TransitionTo, Remove, CreateFile, CreateDirectory, ShowFileContent, RunFile, WriteFile, ChangeMode, ChangeOwn};
+    void (*func[])(char *, Item **) = {ContentShow, TransitionTo, Remove, CreateFile, CreateDirectory, ShowFileContent, RunFile, WriteFile, ChangeMode, ChangeOwn};
     int comm_num = sizeof(commands)/sizeof(commands[0]);
 
-    // TODO: разобратся как лучше начать (создать рут) и как его видеть всем
-    Item* base = Construct("", true, NULL);
-    Item* root = base;
+    Item *base = Construct("", true, NULL);
+    Item *root = base;
 
     bool present = true;
     while (present) {
@@ -70,19 +70,19 @@ int main() {
 
             if (strlen(input) == 0) continue;
 
-            present = CommandScanner(input, commands, func, comm_num);
+            present = CommandScanner(input, commands, func, comm_num, &root);
         }
         else {
             present = false;
         }
     }
 
-    free(base);
+    Stripping(base);
     return 0;
 }
 
 
-bool CommandScanner(char input[], char **commands, void (**func)(char *), const int comm_num) {
+bool CommandScanner(char input[], char **commands, void (**func)(char *, Item **), const int comm_num, Item **root) {
     char *command = NULL;
     char *rest = NULL;
 
@@ -92,7 +92,7 @@ bool CommandScanner(char input[], char **commands, void (**func)(char *), const 
 
     for (int i = 0; i < comm_num; i++) {
         if (command != NULL && strcmp(command, commands[i]) == 0) {
-            func[i](rest);
+            func[i](rest, root);
 
             return true;
         }
@@ -103,13 +103,13 @@ bool CommandScanner(char input[], char **commands, void (**func)(char *), const 
 }
 
 
-void ContentShow(char *arguments) {
+void ContentShow(char *arguments, Item **root) {
     if (arguments == NULL) return;
 
     printf("%s\n", arguments);
 }
 
-void TransitionTo(char *arguments) {
+void TransitionTo(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -118,7 +118,7 @@ void TransitionTo(char *arguments) {
     printf("%s\n", arguments);
 }
 
-void Remove(char *arguments) {
+void Remove(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -127,7 +127,7 @@ void Remove(char *arguments) {
     printf("%s\n", arguments);
 }
 
-void CreateFile(char *arguments) {
+void CreateFile(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -140,7 +140,7 @@ void CreateFile(char *arguments) {
     printf("%s\n", arguments);
 }
 
-void CreateDirectory(char *arguments) {
+void CreateDirectory(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -151,7 +151,7 @@ void CreateDirectory(char *arguments) {
     printf("%s\n", arguments);
 }
 
-void ShowFileContent(char *arguments) {
+void ShowFileContent(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -160,7 +160,7 @@ void ShowFileContent(char *arguments) {
     printf("%s\n", arguments);
 }
 
-void RunFile(char *arguments) {
+void RunFile(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -169,7 +169,7 @@ void RunFile(char *arguments) {
     printf("%s\n", arguments);
 }
 
-void WriteFile(char *arguments) {
+void WriteFile(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -178,7 +178,7 @@ void WriteFile(char *arguments) {
     printf("%s\n", arguments);
 }
 
-void ChangeMode(char *arguments) {
+void ChangeMode(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -187,7 +187,7 @@ void ChangeMode(char *arguments) {
     printf("%s\n", arguments);
 }
 
-void ChangeOwn(char *arguments) {
+void ChangeOwn(char *arguments, Item **root) {
     if (arguments == NULL) {
         SystemResponse(true);
         return;
@@ -209,4 +209,13 @@ void SystemResponse(bool error) {
 void Splitter(char *input, char **first, char **rest) {
     *first = strtok(input, " ");
     *rest = strtok(NULL, "");
+}
+
+void Stripping(Item *base) {
+    if (base == NULL) return;
+
+    Stripping(base->children);
+    Stripping(base->bro);
+
+    free(base);
 }
