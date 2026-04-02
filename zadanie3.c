@@ -55,6 +55,7 @@ char* Fade(char *head);
 Item* LastBro(Item *root);
 Item* BloodHound(Item *child, char *name);
 void ThreeYearsInDagestan(int npaBa, char *sosud);
+bool Allowed(Item *item, int npaBa);
 
 
 int main() {
@@ -69,7 +70,7 @@ int main() {
 
     bool present = true;
     while (present) {
-        printf("%s# ", root->name);                   // printf("# "); ?
+        printf("# ");
         if (fgets(input, 516, stdin) != NULL) {
             input[strcspn(input, "\n")] = '\0';
 
@@ -108,9 +109,12 @@ bool CommandScanner(char input[], char **commands, void (**func)(char *, Item **
 }
 
 
-//TODO: во всех командах проверку прав надо!
-
 void ContentShow(char *arguments, Item **root) {
+    if (!Allowed(*root, 4)) {
+        SystemResponse(true);
+        return;
+    }
+
     char sosud_npaB[4];
 
     if (arguments == NULL) {
@@ -163,7 +167,7 @@ void TransitionTo(char *arguments, Item **root) {
     }
 
     Item *target = BloodHound((*root)->children, name);
-    if (target != NULL && target->dir) {
+    if (target != NULL && target->dir && Allowed(target, 1)) {
         *root = target;
     }
     else SystemResponse(true);
@@ -197,20 +201,24 @@ void Remove(char *arguments, Item **root) {
         return;
     }
 
+    if (Allowed(current, 2)) {
+        if (end != NULL) {
+            end->bro = current->bro;
+        }
+        else {
+            (*root)->children = current->bro;
+        }
 
-    if (end != NULL) {
-        end->bro = current->bro;
+        current->bro = NULL;
+        Stripping(current);
     }
     else {
-        (*root)->children = current->bro;
+        SystemResponse(true);
     }
-
-    current->bro = NULL;
-    Stripping(current);
 }
 
 void CreateFile(char *arguments, Item **root) {
-    if (arguments == NULL) {
+    if (arguments == NULL || !Allowed(*root, 2)) {
         SystemResponse(true);
         return;
     }
@@ -219,7 +227,7 @@ void CreateFile(char *arguments, Item **root) {
     char *rest = NULL;
     Splitter(arguments, &name, &rest);
 
-    if (rest != NULL) {
+    if (rest != NULL || BloodHound((*root)->children, name) != NULL) {
         SystemResponse(true);
         return;
     }
@@ -234,7 +242,7 @@ void CreateFile(char *arguments, Item **root) {
 }
 
 void CreateDirectory(char *arguments, Item **root) {
-    if (arguments == NULL) {
+    if (arguments == NULL || !Allowed(*root, 2)) {
         SystemResponse(true);
         return;
     }
@@ -243,7 +251,7 @@ void CreateDirectory(char *arguments, Item **root) {
     char *rest = NULL;
     Splitter(arguments, &name, &rest);
 
-    if (rest != NULL) {
+    if (rest != NULL || BloodHound((*root)->children, name) != NULL) {
         SystemResponse(true);
         return;
     }
@@ -263,7 +271,19 @@ void ShowFileContent(char *arguments, Item **root) {
         return;
     }
 
-    printf("%s\n", arguments);
+    char *name = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &name, &rest);
+
+    if (rest != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *target = BloodHound((*root)->children, name);
+    if (target != NULL && Allowed(target, 4)) {
+        SystemResponse(false);
+    } else SystemResponse(true);
 }
 
 void RunFile(char *arguments, Item **root) {
@@ -272,7 +292,17 @@ void RunFile(char *arguments, Item **root) {
         return;
     }
 
-    printf("%s\n", arguments);
+    char *name = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &name, &rest);
+
+    if (rest != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *target = BloodHound((*root)->children, name);
+    if (target == NULL || !Allowed(target, 1)) SystemResponse(true);
 }
 
 void WriteFile(char *arguments, Item **root) {
@@ -281,7 +311,17 @@ void WriteFile(char *arguments, Item **root) {
         return;
     }
 
-    printf("%s\n", arguments);
+    char *name = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &name, &rest);
+
+    if (rest != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *target = BloodHound((*root)->children, name);
+    if (target == NULL || !Allowed(target, 2)) SystemResponse(true);
 }
 
 void ChangeMode(char *arguments, Item **root) {
@@ -368,4 +408,10 @@ void ThreeYearsInDagestan(const int npaBa, char *sosud) {
     sosud[1] = npaBa & 2 ? 'w' : '-';
     sosud[2] = npaBa & 1 ? 'x' : '-';
     sosud[3] = '\0';
+}
+
+bool Allowed(Item *item, int npaBa) {
+    if (item == NULL) return false;
+
+    return (item->npaBa & npaBa) != 0;
 }
