@@ -20,11 +20,10 @@ Item* Construct(char* name, bool dir, Item *parent) {
     Item *sosud = malloc(sizeof(Item));
     if (!sosud) return NULL;
 
-    strncpy(sosud->name, name, 255);
-    sosud->name[255] = '\0';
+    snprintf(sosud->name, sizeof(sosud->name), "%s", name);
     sosud->dir = dir;
 
-    strncpy(sosud->owner, "user", 255);
+    snprintf(sosud->owner, sizeof(sosud->owner), "user");
     sosud->npaBa = 7;
 
     sosud->parent = parent;
@@ -65,7 +64,7 @@ int main() {
     void (*func[])(char *, Item **) = {ContentShow, TransitionTo, Remove, CreateFile, CreateDirectory, ShowFileContent, RunFile, WriteFile, ChangeMode, ChangeOwn};
     int comm_num = sizeof(commands)/sizeof(commands[0]);
 
-    Item *base = Construct("", true, NULL);
+    Item *base = Construct("/", true, NULL);
     Item *root = base;
 
     bool present = true;
@@ -174,7 +173,7 @@ void TransitionTo(char *arguments, Item **root) {
 }
 
 void Remove(char *arguments, Item **root) {
-    if (arguments == NULL) {
+    if (arguments == NULL || !Allowed(*root, 2)) {
         SystemResponse(true);
         return;
     }
@@ -201,20 +200,15 @@ void Remove(char *arguments, Item **root) {
         return;
     }
 
-    if (Allowed(current, 2)) {
-        if (end != NULL) {
-            end->bro = current->bro;
-        }
-        else {
-            (*root)->children = current->bro;
-        }
-
-        current->bro = NULL;
-        Stripping(current);
+    if (end != NULL) {
+        end->bro = current->bro;
     }
     else {
-        SystemResponse(true);
+        (*root)->children = current->bro;
     }
+
+    current->bro = NULL;
+    Stripping(current);
 }
 
 void CreateFile(char *arguments, Item **root) {
@@ -330,7 +324,24 @@ void ChangeMode(char *arguments, Item **root) {
         return;
     }
 
-    printf("%s\n", arguments);
+    char *mode = NULL;
+    char *name = NULL;
+    Splitter(arguments, &mode, &name);
+
+    if (mode == NULL || name == NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *target = BloodHound((*root)->children, name);
+
+    char *end;
+    long npaBa = strtol(mode, &end, 10);
+
+    if (target != NULL && mode != end && *end == '\0' && npaBa >= 0 && npaBa <= 7) {
+        target->npaBa = (int)npaBa;
+    }
+    else SystemResponse(true);
 }
 
 void ChangeOwn(char *arguments, Item **root) {
@@ -339,7 +350,20 @@ void ChangeOwn(char *arguments, Item **root) {
         return;
     }
 
-    printf("%s\n", arguments);
+    char *owner = NULL;
+    char *name = NULL;
+    Splitter(arguments, &owner, &name);
+
+    if (owner == NULL || name == NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *target = BloodHound((*root)->children, name);
+    if (target != NULL) {
+        snprintf(target->owner, sizeof(target->owner), "%s", owner);
+    }
+    else SystemResponse(true);
 }
 
 
