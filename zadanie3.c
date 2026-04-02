@@ -108,6 +108,8 @@ bool CommandScanner(char input[], char **commands, void (**func)(char *, Item **
 }
 
 
+//TODO: во всех командах проверку прав надо!
+
 void ContentShow(char *arguments, Item **root) {
     char sosud_npaB[4];
 
@@ -173,7 +175,38 @@ void Remove(char *arguments, Item **root) {
         return;
     }
 
-    printf("%s\n", arguments);
+    char *name = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &name, &rest);
+
+    if (rest != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+    Item *end = NULL;
+    Item *current = (*root)->children;
+
+    while (current != NULL && strcmp(current->name, name) != 0) {
+        end = current;
+        current = current->bro;
+    }
+
+    if (current == NULL) {
+        SystemResponse(true);
+        return;
+    }
+
+
+    if (end != NULL) {
+        end->bro = current->bro;
+    }
+    else {
+        (*root)->children = current->bro;
+    }
+
+    current->bro = NULL;
+    Stripping(current);
 }
 
 void CreateFile(char *arguments, Item **root) {
