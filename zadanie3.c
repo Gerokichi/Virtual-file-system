@@ -117,6 +117,11 @@ void ContentShow(char *arguments, Item **root) {
     char sosud_npaB[4];
 
     if (arguments == NULL) {
+        if ((*root)->children == NULL) {
+            printf("ziaden subor\n");
+            return;
+        }
+
         Item *temp = (*root)->children;
         while (temp != NULL) {
             ThreeYearsInDagestan(temp->npaBa, sosud_npaB);
