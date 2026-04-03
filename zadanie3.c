@@ -330,8 +330,12 @@ void ChangeMode(char *arguments, Item **root) {
     }
 
     char *mode = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &mode, &rest);
+
     char *name = NULL;
-    Splitter(arguments, &mode, &name);
+    char *rest_last = NULL;
+    Splitter(rest, &name, &rest_last);
 
     if (mode == NULL || name == NULL) {
         SystemResponse(true);
@@ -356,8 +360,12 @@ void ChangeOwn(char *arguments, Item **root) {
     }
 
     char *owner = NULL;
+    char *rest = NULL;
+    Splitter(arguments, &owner, &rest);
+
     char *name = NULL;
-    Splitter(arguments, &owner, &name);
+    char *rest_last = NULL;
+    Splitter(rest, &name, &rest_last);
 
     if (owner == NULL || name == NULL) {
         SystemResponse(true);
@@ -382,7 +390,7 @@ void SystemResponse(bool error) {
 }
 
 void Splitter(char *input, char **first, char **rest) {
-    *first = strtok(input, " ");
+    *first = strtok(input, " \t");
     *rest = strtok(NULL, "");
 }
 
