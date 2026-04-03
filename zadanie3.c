@@ -337,6 +337,11 @@ void ChangeMode(char *arguments, Item **root) {
     char *rest_last = NULL;
     Splitter(rest, &name, &rest_last);
 
+    if (rest_last != NULL) {
+        SystemResponse(true);
+        return;
+    }
+
     if (mode == NULL || name == NULL) {
         SystemResponse(true);
         return;
@@ -366,6 +371,11 @@ void ChangeOwn(char *arguments, Item **root) {
     char *name = NULL;
     char *rest_last = NULL;
     Splitter(rest, &name, &rest_last);
+
+    if (rest_last != NULL) {
+        SystemResponse(true);
+        return;
+    }
 
     if (owner == NULL || name == NULL) {
         SystemResponse(true);
